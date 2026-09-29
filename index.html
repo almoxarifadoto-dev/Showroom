@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Showroom - Controle de Itens</title>
+<title>Showroom - Controle de Itens (SQLite no Servidor)</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -17,33 +17,31 @@
   h1 { font-size: 1.4rem; margin-bottom: 4px; }
   .sub { color: #888; margin-bottom: 24px; font-size: 0.9rem; }
 
+  .backup-container { display: flex; gap: 10px; margin-bottom: 24px; }
+  button.btn-backup {
+    background: #2a2d35; border: 1px solid #444; color: #ccc;
+    padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+  button.btn-backup:hover { background: #3a3d45; border-color: #7ab8e0; color: #fff; }
+
   #carregando {
     padding: 14px; border-radius: 8px; background: #1a1d24; color: #7ab8e0;
     margin-bottom: 20px; font-size: 0.9rem;
   }
 
-  input[disabled] { opacity: 0.4; }
+  input[disabled], textarea[disabled], button[disabled] { opacity: 0.4; cursor: not-allowed; }
 
   #scan-box, #busca-box {
-    width: 100%;
-    font-size: 1.2rem;
-    padding: 14px;
-    border-radius: 8px;
-    border: 2px solid #333;
-    background: #1a1d24;
-    color: #fff;
-    margin-bottom: 8px;
+    width: 100%; font-size: 1.2rem; padding: 14px; border-radius: 8px;
+    border: 2px solid #333; background: #1a1d24; color: #fff; margin-bottom: 8px;
   }
   #scan-box:focus, #busca-box:focus { border-color: #4caf50; outline: none; }
   #busca-box:focus { border-color: #7ab8e0; }
 
   #feedback {
-    min-height: 40px;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 24px;
-    font-weight: 600;
-    display: none;
+    min-height: 40px; padding: 12px; border-radius: 8px; margin-bottom: 24px;
+    font-weight: 600; display: none;
   }
   #feedback.ok-add { background: #1e3a24; color: #7be08a; display: block; }
   #feedback.erro { background: #3a2e1e; color: #e0c07a; display: block; }
@@ -55,6 +53,7 @@
   }
   .resultado .info { flex: 1; }
   .resultado .info .cod { color: #888; margin-right: 8px; }
+  
   button.adicionar {
     background: #1e3a24; border: 1px solid #2d5a35; color: #7be08a;
     padding: 5px 14px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;
@@ -67,81 +66,55 @@
   #contador { color: #4caf50; font-weight: 700; }
 
   .topo { display: flex; justify-content: space-between; align-items: baseline; }
-  button#limpar {
-    background: none; border: 1px solid #444; color: #999;
-    padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;
+  button#limpar, button.remover, button.menos-um {
+    background: none; border-radius: 6px; font-size: 0.8rem; cursor: pointer;
   }
+  button#limpar { border: 1px solid #444; color: #999; padding: 4px 10px; }
   button#limpar:hover { border-color: #e08a8a; color: #e08a8a; }
-
-  button.remover {
-    background: none; border: 1px solid #4a2020; color: #e08a8a;
-    padding: 3px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;
-  }
+  button.remover { border: 1px solid #4a2020; color: #e08a8a; padding: 3px 10px; }
   button.remover:hover { background: #3a1e1e; }
-
-  button.menos-um {
-    background: none; border: 1px solid #333; color: #ccc;
-    padding: 3px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;
-    margin-right: 6px;
-  }
+  button.menos-um { border: 1px solid #333; color: #ccc; padding: 3px 10px; margin-right: 6px; }
   button.menos-um:hover { border-color: #7ab8e0; color: #7ab8e0; }
 
-  #busca-showroom {
+  #busca-showroom, .form-cadastro input, #lote-texto, #lote-codigos-texto {
     width: 100%; font-size: 0.95rem; padding: 10px; border-radius: 8px;
-    border: 2px solid #333; background: #1a1d24; color: #fff;
+    border: 2px solid #333; background: #1a1d24; color: #fff; margin-bottom: 8px;
   }
-  #busca-showroom:focus { border-color: #7ab8e0; outline: none; }
+  #busca-showroom:focus, .form-cadastro input:focus, #lote-texto:focus, #lote-codigos-texto:focus {
+    border-color: #7ab8e0; outline: none;
+  }
 
   .form-cadastro { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
-  .form-cadastro input {
-    font-size: 0.95rem; padding: 10px; border-radius: 8px;
-    border: 2px solid #333; background: #1a1d24; color: #fff;
-  }
-  .form-cadastro input:focus { border-color: #7ab8e0; outline: none; }
-  #salvar-novo-item {
+  #salvar-novo-item, #salvar-lote, #salvar-lote-codigos {
     background: #1e3a24; border: 1px solid #2d5a35; color: #7be08a;
     padding: 10px; border-radius: 8px; font-size: 0.95rem; cursor: pointer;
   }
-  #salvar-novo-item:hover { background: #244a2c; }
-  #feedback-cadastro { margin-bottom: 24px; font-size: 0.9rem; min-height: 20px; }
-  #feedback-cadastro.ok { color: #7be08a; }
-  #feedback-cadastro.erro { color: #e0c07a; }
-
-  #lote-texto, #lote-codigos-texto {
-    width: 100%; font-family: monospace; font-size: 0.85rem; padding: 10px;
-    border-radius: 8px; border: 2px solid #333; background: #1a1d24; color: #fff;
-    margin-bottom: 8px; resize: vertical;
-  }
-  #lote-texto:focus, #lote-codigos-texto:focus { border-color: #7ab8e0; outline: none; }
-  #salvar-lote, #salvar-lote-codigos {
-    background: #1e3a24; border: 1px solid #2d5a35; color: #7be08a;
-    padding: 10px 16px; border-radius: 8px; font-size: 0.95rem; cursor: pointer;
-  }
-  #salvar-lote:hover, #salvar-lote-codigos:hover { background: #244a2c; }
-  #feedback-lote, #feedback-lote-codigos { margin: 12px 0 24px; font-size: 0.85rem; white-space: pre-wrap; }
-  #feedback-lote.ok, #feedback-lote-codigos.ok { color: #7be08a; }
-  #feedback-lote.erro, #feedback-lote-codigos.erro { color: #e0c07a; }
-  #status {
-    position: fixed; top: 10px; right: 12px; font-size: 0.75rem; padding: 4px 10px;
-    border-radius: 12px; background: #1a1d24; border: 1px solid #333; color: #888; z-index: 10;
-  }
-  #status.on { color: #7be08a; border-color: #2d5a35; }
-  #status.off { color: #e08a8a; border-color: #5a2d2d; }
+  #salvar-novo-item:hover, #salvar-lote:hover, #salvar-lote-codigos:hover { background: #244a2c; }
+  
+  #feedback-cadastro, #feedback-lote, #feedback-lote-codigos { margin-bottom: 24px; font-size: 0.9rem; min-height: 20px; white-space: pre-wrap; }
+  .ok { color: #7be08a; }
+  .erro { color: #e0c07a; }
+  #lote-texto, #lote-codigos-texto { font-family: monospace; font-size: 0.85rem; resize: vertical; }
 </style>
 </head>
 <body>
-  <div id="status">● conectando...</div>
 
   <h1>Showroom</h1>
-  <div class="sub">Dados salvos no servidor (arquivo dados.json) e compartilhados entre todos os PCs conectados.</div>
+  <div class="sub">Banco de dados: SQLite rodando no servidor.</div>
 
-  <div id="carregando">⏳ Conectando ao servidor...</div>
+  <div class="backup-container">
+    <button id="btn-exportar" class="btn-backup">📥 Exportar Banco (.db)</button>
+    <button id="btn-importar" class="btn-backup">📤 Importar Banco (.db)</button>
+    <input type="file" id="input-importar" accept=".db,.sqlite" style="display:none;">
+  </div>
+
+  <div id="carregando">⏳ Conectando ao servidor backend (se estiver hibernando, pode levar alguns segundos)...</div>
 
   <input id="scan-box" type="text" placeholder="Aguardando leitura (EAN ou código de integração)..." autofocus disabled>
   <div id="feedback"></div>
 
   <h2 style="margin-top:32px;">Adicionar vários códigos de uma vez</h2>
-  <div class="sub">Cole ou digite vários códigos (EAN ou código de integração), um por linha. Cada um soma 1 na quantidade, igual bipar um por um.</div>
+  <div class="sub">Cole ou digite vários códigos (EAN ou código de integração), um por linha. Cada um soma 1 na quantidade.</div>
   <textarea id="lote-codigos-texto" rows="6" placeholder="7898214962183&#10;30000&#10;1019&#10;7899298710417" disabled></textarea>
   <button id="salvar-lote-codigos" disabled>Adicionar lote</button>
   <div id="feedback-lote-codigos"></div>
@@ -152,7 +125,7 @@
   <div id="resultados-busca"></div>
 
   <h2 style="margin-top:32px;">Cadastrar item novo no banco</h2>
-  <div class="sub">Pra produtos que ainda não estão na base importada da planilha.</div>
+  <div class="sub">Pra produtos que ainda não estão na base importada.</div>
   <div class="form-cadastro">
     <input id="novo-produto" type="text" placeholder="Código do produto (obrigatório)" disabled>
     <input id="novo-nome" type="text" placeholder="Nome do produto (obrigatório)" disabled>
@@ -164,8 +137,8 @@
 
   <h2 style="margin-top:32px;">Cadastrar vários de uma vez</h2>
   <div class="sub">Uma linha por item, campos separados por ponto e vírgula:<br>
-  <code>código;nome;marca;código de barras</code> (marca e código de barras podem ficar vazios, mas mantenha os ; )</div>
-  <textarea id="lote-texto" rows="6" placeholder="99999;ITEM EXEMPLO UM;MARCA X;7891234567890&#10;99998;ITEM EXEMPLO DOIS;;&#10;99997;ITEM SEM MARCA NEM BARRAS;;" disabled></textarea>
+  <code>código;nome;marca;código de barras</code></div>
+  <textarea id="lote-texto" rows="6" placeholder="99999;ITEM EXEMPLO UM;MARCA X;7891234567890" disabled></textarea>
   <button id="salvar-lote" disabled>Cadastrar lote</button>
   <div id="feedback-lote"></div>
 
@@ -182,112 +155,143 @@
   </table>
 
 <script src="catalogo.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
 <script>
-// ---------- Estado local (espelho do que está no servidor) ----------
-let extras = [];          // itens cadastrados (vêm do servidor)
-let showroom = {};        // { produto: { quantidade, ts } }
-let versao = 0;
-let todos = [];           // CATALOGO + extras
-const porProduto = new Map();
-let conectado = false;
-let iniciado = false;
+let db = null;
 
-function reindexar() {
-  todos = CATALOGO.concat(extras);
-  porProduto.clear();
-  todos.forEach(i => porProduto.set(i.produto, i));
-}
-
-function aplicarEstado(e) {
-  if (e.versao < versao) return; // resposta velha, ignora
-  versao = e.versao;
-  extras = e.extras;
-  showroom = e.showroom;
-  reindexar();
-}
-
-function esc(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-
-// ---------- Comunicação com o servidor ----------
-async function api(caminho, corpo) {
-  const r = await fetch(caminho, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(corpo || {})
-  });
-  if (!r.ok) throw new Error('Servidor respondeu ' + r.status);
-  const d = await r.json();
-  if (d.estado) aplicarEstado(d.estado);
-  setStatus(true);
-  return d;
-}
-
-// Fila: garante que leituras rápidas em sequência sejam enviadas em ordem
-let fila = Promise.resolve();
-function enfileirar(fn) {
-  const p = fila.then(fn);
-  fila = p.catch(() => {});
-  return p;
-}
-
-function setStatus(ok) {
-  conectado = ok;
-  const el = document.getElementById('status');
-  el.className = ok ? 'on' : 'off';
-  el.textContent = ok ? '● conectado' : '● sem conexão com o servidor';
-}
-
-async function sincronizar() {
+// ---------- Servidor: guardar/carregar o binário do SQLite ----------
+async function carregarBinario() {
   try {
-    const r = await fetch('/api/estado?v=' + versao, { cache: 'no-store' });
-    const d = await r.json();
-    setStatus(true);
-    if (d.mudou) {
-      aplicarEstado(d.estado);
-      renderizarLista();
-    }
-    if (!iniciado) liberarTela();
-  } catch (e) {
-    setStatus(false);
+    const res = await fetch('/load_db');
+    if (!res.ok) return null;
+    const buffer = await res.arrayBuffer();
+    return new Uint8Array(buffer);
+  } catch (err) {
+    console.error('Erro ao carregar banco do servidor:', err);
+    return null;
   }
 }
 
-const IDS_HABILITAR = ['scan-box', 'busca-box', 'novo-produto', 'novo-nome', 'novo-marca', 'novo-barras',
-  'salvar-novo-item', 'lote-texto', 'salvar-lote', 'lote-codigos-texto', 'salvar-lote-codigos'];
+async function salvarBinario(uint8arr) {
+  try {
+    const res = await fetch('/save_db', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: uint8arr
+    });
+    if (!res.ok) console.error('Falha ao salvar no servidor.');
+  } catch (err) {
+    console.error('Erro de rede ao tentar salvar:', err);
+  }
+}
 
-function liberarTela() {
-  iniciado = true;
+function persistir() {
+  const dados = db.export();
+  salvarBinario(dados).catch(err => console.error('Erro na persistência:', err));
+}
+
+// ---------- Exportação / Importação ----------
+document.getElementById('btn-exportar').addEventListener('click', () => {
+  window.location.href = '/download_db';
+});
+
+const inputImportar = document.getElementById('input-importar');
+document.getElementById('btn-importar').addEventListener('click', () => {
+  inputImportar.click();
+});
+
+inputImportar.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  if (!confirm('ATENÇÃO: Isso vai apagar o banco atual e substituir pelo que você está enviando. Confirma?')) {
+    inputImportar.value = '';
+    return;
+  }
+
+  const buffer = await file.arrayBuffer();
+  const uint8arr = new Uint8Array(buffer);
+  
+  document.getElementById('carregando').textContent = '⏳ Importando banco e salvando no servidor...';
+  document.getElementById('carregando').style.display = 'block';
+
+  await salvarBinario(uint8arr);
+  alert('Banco importado com sucesso! A página será atualizada.');
+  window.location.reload();
+});
+
+// ---------- Inicialização ----------
+async function iniciar() {
+  const SQL = await initSqlJs({
+    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
+  });
+
+  const binarioExistente = await carregarBinario();
+
+  if (binarioExistente) {
+    db = new SQL.Database(binarioExistente);
+  } else {
+    db = new SQL.Database();
+    db.run(`
+      CREATE TABLE catalogo (
+        produto TEXT PRIMARY KEY,
+        nome TEXT,
+        marca TEXT,
+        codigo_original TEXT,
+        codigo_barras TEXT
+      );
+      CREATE TABLE showroom (
+        produto TEXT PRIMARY KEY,
+        quantidade INTEGER NOT NULL DEFAULT 0,
+        ultimo_scan TEXT
+      );
+      CREATE INDEX idx_codigo_barras ON catalogo(codigo_barras);
+    `);
+    
+    if (typeof CATALOGO !== 'undefined') {
+      db.run('BEGIN TRANSACTION');
+      const stmt = db.prepare('INSERT INTO catalogo (produto, nome, marca, codigo_original, codigo_barras) VALUES (?, ?, ?, ?, ?)');
+      for (const item of CATALOGO) {
+        stmt.run([item.produto, item.nome, item.marca, item.codigo_original, item.codigo_barras]);
+      }
+      stmt.free();
+      db.run('COMMIT');
+    }
+    persistir();
+  }
+
   document.getElementById('carregando').style.display = 'none';
-  IDS_HABILITAR.forEach(id => document.getElementById(id).disabled = false);
+  document.querySelectorAll('input, button, textarea').forEach(el => el.disabled = false);
+  
+  const scanBox = document.getElementById('scan-box');
   scanBox.focus();
   renderizarLista();
 }
 
-// ---------- Elementos ----------
+function consultar(sql, params = []) {
+  const stmt = db.prepare(sql);
+  stmt.bind(params);
+  const linhas = [];
+  while (stmt.step()) linhas.push(stmt.getAsObject());
+  stmt.free();
+  return linhas;
+}
+
+function executar(sql, params = []) {
+  db.run(sql, params);
+}
+
 const scanBox = document.getElementById('scan-box');
 const feedback = document.getElementById('feedback');
 const lista = document.getElementById('lista');
 const contador = document.getElementById('contador');
 const buscaBox = document.getElementById('busca-box');
 const resultadosBusca = document.getElementById('resultados-busca');
-
-function erroConexao(el, e) {
-  console.error(e);
-  el.className = 'erro';
-  el.textContent = '⚠ Sem conexão com o servidor — nada foi salvo. Verifique se a janela do servidor está aberta.';
-  setStatus(false);
-}
+const buscaShowroom = document.getElementById('busca-showroom');
 
 document.addEventListener('click', (e) => {
-  if (e.target.id === 'limpar') return;
-  if (e.target.classList.contains('remover') || e.target.classList.contains('menos-um')) return;
-  if (e.target.id === 'busca-box' || e.target.closest('#resultados-busca')) return;
-  if (e.target.id === 'busca-showroom') return;
-  if (e.target.closest('.form-cadastro')) return;
-  if (e.target.id === 'lote-texto' || e.target.id === 'salvar-lote') return;
-  if (e.target.id === 'lote-codigos-texto' || e.target.id === 'salvar-lote-codigos') return;
+  const tagsIgnoradas = ['BUTTON', 'INPUT', 'TEXTAREA'];
+  if (tagsIgnoradas.includes(e.target.tagName)) return;
   if (!scanBox.disabled) scanBox.focus();
 });
 
@@ -296,137 +300,141 @@ scanBox.addEventListener('keydown', (e) => {
   const codigo = scanBox.value.trim();
   scanBox.value = '';
   if (!codigo) return;
-  enfileirar(() => processarLeitura(codigo));
+  processarLeitura(codigo);
 });
 
-// ---------- Lógica principal ----------
-function mostrarResultadoUnico(r) {
-  if (r.adicionados.length) {
-    const a = r.adicionados[0];
-    feedback.className = 'ok-add';
-    feedback.textContent = `✔ ${a.nome} (${a.marca}) — cód. ${a.produto} [via ${a.origem}] — quantidade agora: ${a.quantidade}`;
+function resolverCodigo(codigoLido) {
+  const porBarras = consultar('SELECT produto, nome, marca FROM catalogo WHERE codigo_barras = ?', [codigoLido]);
+  if (porBarras.length > 1) return { status: 'ambiguo', codigoLido, candidatos: porBarras, origem: 'código de barras' };
+  if (porBarras.length === 1) return { status: 'ok', produto: porBarras[0].produto, origem: 'código de barras' };
+  const porProduto = consultar('SELECT produto FROM catalogo WHERE produto = ?', [codigoLido]);
+  if (porProduto.length === 1) return { status: 'ok', produto: porProduto[0].produto, origem: 'código de integração (Produto)' };
+  return { status: 'nao_encontrado', codigoLido };
+}
+
+function aplicarAdicao(codigo, agora) {
+  const itemRows = consultar('SELECT * FROM catalogo WHERE produto = ?', [codigo]);
+  if (itemRows.length === 0) return null;
+  const item = itemRows[0];
+  const existente = consultar('SELECT quantidade FROM showroom WHERE produto = ?', [codigo]);
+  let novaQuantidade;
+  if (existente.length > 0) {
+    novaQuantidade = existente[0].quantidade + 1;
+    executar('UPDATE showroom SET quantidade = ?, ultimo_scan = ? WHERE produto = ?', [novaQuantidade, agora, codigo]);
   } else {
-    feedback.className = 'erro';
-    feedback.textContent = '⚠ ' + (r.problemas[0] || 'Nada foi adicionado.');
+    novaQuantidade = 1;
+    executar('INSERT INTO showroom (produto, quantidade, ultimo_scan) VALUES (?, 1, ?)', [codigo, agora]);
   }
+  return { item, novaQuantidade };
+}
+
+function adicionarProduto(codigo, origem) {
+  const agora = new Date().toLocaleString('pt-BR');
+  const resultado = aplicarAdicao(codigo, agora);
+  if (!resultado) return;
+  persistir();
+  feedback.className = 'ok-add';
+  feedback.textContent = `✔ ${resultado.item.nome} (${resultado.item.marca}) — cód. ${codigo} [via ${origem}] — quantidade agora: ${resultado.novaQuantidade}`;
   renderizarLista();
 }
 
-async function processarLeitura(codigo) {
-  try {
-    mostrarResultadoUnico(await api('/api/adicionar', { codigos: [codigo] }));
-  } catch (e) { erroConexao(feedback, e); }
+function processarLeitura(codigoLido) {
+  const r = resolverCodigo(codigoLido);
+  if (r.status === 'ambiguo') {
+    const nomes = r.candidatos.map(c => `${c.produto} - ${c.nome}`).join('  |  ');
+    feedback.className = 'erro';
+    feedback.textContent = `⚠ ${r.origem} '${r.codigoLido}' está cadastrado em mais de um produto (${nomes}). Nada adicionado.`;
+    return;
+  }
+  if (r.status === 'nao_encontrado') {
+    feedback.className = 'erro';
+    feedback.textContent = `⚠ Código '${r.codigoLido}' não encontrado.`;
+    return;
+  }
+  adicionarProduto(r.produto, r.origem);
 }
 
-async function adicionarProduto(codigo, origem) {
-  try {
-    mostrarResultadoUnico(await api('/api/adicionar-produto', { produto: codigo, origem }));
-  } catch (e) { erroConexao(feedback, e); }
-}
-
-async function removerUma(codigo) {
-  try { await api('/api/remover-um', { produto: codigo }); renderizarLista(); }
-  catch (e) { erroConexao(feedback, e); }
+function removerUma(codigo) {
+  executar('UPDATE showroom SET quantidade = quantidade - 1 WHERE produto = ? AND quantidade > 0', [codigo]);
+  persistir();
+  renderizarLista();
   scanBox.focus();
 }
 
-async function removerDoShowroom(codigo) {
-  try { await api('/api/remover', { produto: codigo }); renderizarLista(); }
-  catch (e) { erroConexao(feedback, e); }
+function removerDoShowroom(codigo) {
+  executar('UPDATE showroom SET quantidade = 0 WHERE produto = ?', [codigo]);
+  persistir();
+  renderizarLista();
   scanBox.focus();
 }
 
-const buscaShowroom = document.getElementById('busca-showroom');
 buscaShowroom.addEventListener('input', renderizarLista);
 
 function renderizarLista() {
-  const termo = buscaShowroom.value.trim().toLowerCase();
-  let linhas = [];
-  let total = 0;
-
-  for (const [produto, s] of Object.entries(showroom)) {
-    if (s.quantidade <= 0) continue;
-    total++;
-    const c = porProduto.get(produto);
-    if (!c) continue;
-    if (termo && !(produto.toLowerCase().includes(termo) || (c.nome || '').toLowerCase().includes(termo))) continue;
-    linhas.push({ produto, nome: c.nome, marca: c.marca, codigo_barras: c.codigo_barras, quantidade: s.quantidade, ts: s.ts });
+  const termo = buscaShowroom.value.trim();
+  let sqlBase = `
+    SELECT s.produto, c.nome, c.marca, c.codigo_barras, s.quantidade, s.ultimo_scan
+    FROM showroom s JOIN catalogo c ON c.produto = s.produto
+    WHERE s.quantidade > 0
+  `;
+  let params = [];
+  if (termo) {
+    sqlBase += ` AND (s.produto LIKE ? OR c.nome LIKE ?)`;
+    params.push(`%${termo}%`, `%${termo}%`);
   }
-  linhas.sort((a, b) => b.ts - a.ts);
-
-  contador.textContent = total;
+  sqlBase += ` ORDER BY s.ultimo_scan DESC`;
+  const linhas = consultar(sqlBase, params);
+  
+  const totalGeral = consultar('SELECT COUNT(*) as n FROM showroom WHERE quantidade > 0')[0].n;
+  contador.textContent = totalGeral;
+  
   lista.innerHTML = linhas.map(row => `
     <tr>
-      <td>${esc(row.produto)}</td>
-      <td>${esc(row.nome)}</td>
-      <td>${esc(row.marca)}</td>
+      <td>${row.produto}</td>
+      <td>${row.nome}</td>
+      <td>${row.marca}</td>
       <td>${row.quantidade}</td>
-      <td>${esc(row.codigo_barras) || '—'}</td>
-      <td>${new Date(row.ts).toLocaleString('pt-BR')}</td>
+      <td>${row.codigo_barras || '—'}</td>
+      <td>${row.ultimo_scan}</td>
       <td>
-        <button class="menos-um" data-codigo="${esc(row.produto)}">-1</button>
-        <button class="remover" data-codigo="${esc(row.produto)}">Remover</button>
+        <button class="menos-um" data-codigo="${row.produto}">-1</button>
+        <button class="remover" data-codigo="${row.produto}">Remover</button>
       </td>
     </tr>
   `).join('');
+
+  lista.querySelectorAll('button.menos-um').forEach(btn => btn.addEventListener('click', () => removerUma(btn.dataset.codigo)));
+  lista.querySelectorAll('button.remover').forEach(btn => btn.addEventListener('click', () => removerDoShowroom(btn.dataset.codigo)));
 }
 
-lista.addEventListener('click', (e) => {
-  const btn = e.target.closest('button');
-  if (!btn) return;
-  if (btn.classList.contains('menos-um')) enfileirar(() => removerUma(btn.dataset.codigo));
-  else if (btn.classList.contains('remover')) enfileirar(() => removerDoShowroom(btn.dataset.codigo));
-});
-
 document.getElementById('limpar').addEventListener('click', () => {
-  if (confirm('Isso zera a quantidade de TODOS os itens do showroom (em todos os PCs). Confirma?')) {
-    enfileirar(async () => {
-      try { await api('/api/zerar'); renderizarLista(); }
-      catch (e) { erroConexao(feedback, e); }
-      scanBox.focus();
-    });
+  if (confirm('Isso zera a quantidade de TODOS os itens do showroom. Confirma?')) {
+    executar('UPDATE showroom SET quantidade = 0');
+    persistir();
+    renderizarLista();
+    scanBox.focus();
   }
 });
 
 buscaBox.addEventListener('input', () => {
-  const termo = buscaBox.value.trim().toLowerCase();
-  if (termo.length < 2) {
-    resultadosBusca.innerHTML = '';
-    return;
-  }
-
-  const encontrados = [];
-  for (const item of todos) {
-    if (item.produto.toLowerCase().includes(termo)) {
-      encontrados.push(item);
-      if (encontrados.length >= 25) break;
-    }
-  }
-
-  if (encontrados.length === 0) {
-    resultadosBusca.innerHTML = '<div class="sub">Nada encontrado.</div>';
-    return;
-  }
-
+  const termo = buscaBox.value.trim();
+  if (termo.length < 2) { resultadosBusca.innerHTML = ''; return; }
+  const encontrados = consultar('SELECT produto, nome, marca FROM catalogo WHERE produto LIKE ? LIMIT 25', [`%${termo}%`]);
+  if (encontrados.length === 0) { resultadosBusca.innerHTML = '<div class="sub">Nada encontrado.</div>'; return; }
   resultadosBusca.innerHTML = encontrados.map(item => `
     <div class="resultado">
-      <div class="info"><span class="cod">${esc(item.produto)}</span>${esc(item.nome)} — ${esc(item.marca)}</div>
-      <button class="adicionar" data-codigo="${esc(item.produto)}">+ Adicionar</button>
+      <div class="info"><span class="cod">${item.produto}</span>${item.nome} — ${item.marca}</div>
+      <button class="adicionar" data-codigo="${item.produto}">+ Adicionar</button>
     </div>
   `).join('');
+  resultadosBusca.querySelectorAll('button.adicionar').forEach(btn => {
+    btn.addEventListener('click', () => {
+      adicionarProduto(btn.dataset.codigo, 'busca manual');
+      buscaBox.value = ''; resultadosBusca.innerHTML = ''; buscaBox.focus();
+    });
+  });
 });
 
-resultadosBusca.addEventListener('click', (e) => {
-  const btn = e.target.closest('button.adicionar');
-  if (!btn) return;
-  const codigo = btn.dataset.codigo;
-  enfileirar(() => adicionarProduto(codigo, 'busca manual'));
-  buscaBox.value = '';
-  resultadosBusca.innerHTML = '';
-  buscaBox.focus();
-});
-
-// ---------- Cadastro individual ----------
 document.getElementById('salvar-novo-item').addEventListener('click', () => {
   const fb = document.getElementById('feedback-cadastro');
   const produto = document.getElementById('novo-produto').value.trim();
@@ -434,103 +442,77 @@ document.getElementById('salvar-novo-item').addEventListener('click', () => {
   const marca = document.getElementById('novo-marca').value.trim();
   const barras = document.getElementById('novo-barras').value.trim();
 
-  if (!produto || !nome) {
+  if (!produto || !nome) return (fb.className = 'erro', fb.textContent = '⚠ Código e nome são obrigatórios.');
+  if (consultar('SELECT produto FROM catalogo WHERE produto = ?', [produto]).length > 0) 
+    return (fb.className = 'erro', fb.textContent = '⚠ Já existe um item com esse código no banco.');
+
+  let barrasParaSalvar = barras;
+  if (barras && consultar('SELECT produto FROM catalogo WHERE codigo_barras = ?', [barras]).length > 0) {
     fb.className = 'erro';
-    fb.textContent = '⚠ Código do produto e nome são obrigatórios.';
-    return;
+    fb.textContent = '⚠ Código de barras já em uso. Item cadastrado SEM código de barras.';
+    barrasParaSalvar = '';
   }
 
-  enfileirar(async () => {
-    try {
-      const r = await api('/api/cadastrar', { itens: [{ produto, nome, marca, barras }] });
-      if (r.adicionados.length === 0) {
-        fb.className = 'erro';
-        fb.textContent = '⚠ ' + (r.avisos[0] ? r.avisos[0].motivo : 'Item não cadastrado.');
-        return;
-      }
-      if (r.avisos.length > 0) {
-        fb.className = 'erro';
-        fb.textContent = `⚠ Item '${produto}' cadastrado, mas: ${r.avisos[0].motivo}`;
-      } else {
-        fb.className = 'ok';
-        fb.textContent = `✔ Item '${produto} - ${nome}' cadastrado no banco.`;
-      }
-      ['novo-produto', 'novo-nome', 'novo-marca', 'novo-barras'].forEach(id => document.getElementById(id).value = '');
-      document.getElementById('novo-produto').focus();
-    } catch (e) { erroConexao(fb, e); }
-  });
+  executar('INSERT INTO catalogo (produto, nome, marca, codigo_original, codigo_barras) VALUES (?, ?, ?, ?, ?)', [produto, nome, marca, produto, barrasParaSalvar]);
+  persistir();
+  if (fb.className !== 'erro') { fb.className = 'ok'; fb.textContent = `✔ Item '${produto} - ${nome}' cadastrado.`; }
+  
+  ['novo-produto', 'novo-nome', 'novo-marca', 'novo-barras'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('novo-produto').focus();
 });
 
-// ---------- Lote: adicionar códigos ao showroom ----------
 document.getElementById('salvar-lote-codigos').addEventListener('click', () => {
   const fb = document.getElementById('feedback-lote-codigos');
-  const texto = document.getElementById('lote-codigos-texto').value;
-  const codigos = texto.split(/[\n,;]+/).map(c => c.trim()).filter(c => c.length > 0);
+  const codigos = document.getElementById('lote-codigos-texto').value.split(/[\n,;]+/).map(c => c.trim()).filter(c => c.length > 0);
+  if (codigos.length === 0) return (fb.className = 'erro', fb.textContent = '⚠ Cole ao menos um código.');
 
-  if (codigos.length === 0) {
-    fb.className = 'erro';
-    fb.textContent = '⚠ Cole ao menos um código antes de adicionar.';
-    return;
-  }
+  const agora = new Date().toLocaleString('pt-BR');
+  const adicionados = [], problemas = [];
+  let houveAdicao = false;
 
-  enfileirar(async () => {
-    try {
-      const r = await api('/api/adicionar', { codigos });
-      const linhasOk = r.adicionados.map(a => `${a.produto} - ${a.nome} [via ${a.origem}] — quantidade agora: ${a.quantidade}`);
-      let msg = `✔ ${r.adicionados.length} código(s) processado(s) com sucesso:\n` + linhasOk.join('\n');
-      if (r.problemas.length > 0) {
-        msg += `\n\n⚠ ${r.problemas.length} código(s) com problema:\n` + r.problemas.join('\n');
-      }
-      fb.className = r.problemas.length > 0 ? 'erro' : 'ok';
-      fb.textContent = msg;
-      if (r.adicionados.length > 0) {
-        document.getElementById('lote-codigos-texto').value = '';
-        renderizarLista();
-      }
-    } catch (e) { erroConexao(fb, e); }
+  codigos.forEach(cod => {
+    const r = resolverCodigo(cod);
+    if (r.status === 'ambiguo' || r.status === 'nao_encontrado') return problemas.push(`'${cod}': ${r.status}`);
+    const res = aplicarAdicao(r.produto, agora);
+    if (res) { houveAdicao = true; adicionados.push(`${r.produto} - ${res.item.nome}`); }
   });
+
+  if (houveAdicao) { persistir(); renderizarLista(); document.getElementById('lote-codigos-texto').value = ''; }
+  let msg = `✔ ${adicionados.length} processado(s).`;
+  if (problemas.length > 0) msg += `\n⚠ ${problemas.length} com problema.`;
+  fb.className = problemas.length > 0 ? 'erro' : 'ok';
+  fb.textContent = msg;
 });
 
-// ---------- Lote: cadastrar itens novos ----------
 document.getElementById('salvar-lote').addEventListener('click', () => {
   const fb = document.getElementById('feedback-lote');
-  const texto = document.getElementById('lote-texto').value;
-  const linhasBrutas = texto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const linhas = document.getElementById('lote-texto').value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (linhas.length === 0) return (fb.className = 'erro', fb.textContent = '⚠ Cole ao menos uma linha.');
 
-  if (linhasBrutas.length === 0) {
-    fb.className = 'erro';
-    fb.textContent = '⚠ Cole ao menos uma linha antes de cadastrar.';
-    return;
-  }
-
-  const itens = linhasBrutas.map(linha => {
-    const [produto = '', nome = '', marca = '', barras = ''] = linha.split(';').map(c => c.trim());
-    return { produto, nome, marca, barras };
+  const adicionados = [], ignorados = [], usados = new Set();
+  
+  linhas.forEach(linha => {
+    const [prod, nome, marca = '', barras = ''] = linha.split(';').map(c => c.trim());
+    if (!prod || !nome) return ignorados.push(`Erro na linha: ${linha}`);
+    if (usados.has(prod) || consultar('SELECT produto FROM catalogo WHERE produto = ?', [prod]).length > 0) return ignorados.push(`Cód já existe: ${prod}`);
+    
+    let bFinal = barras;
+    if (barras && consultar('SELECT produto FROM catalogo WHERE codigo_barras = ?', [barras]).length > 0) bFinal = '';
+    
+    executar('INSERT INTO catalogo (produto, nome, marca, codigo_original, codigo_barras) VALUES (?, ?, ?, ?, ?)', [prod, nome, marca, prod, bFinal]);
+    usados.add(prod); adicionados.push(prod);
   });
 
-  enfileirar(async () => {
-    try {
-      const r = await api('/api/cadastrar', { itens });
-      let msg = `✔ ${r.adicionados.length} item(ns) cadastrado(s).`;
-      if (r.avisos.length > 0) {
-        msg += `\n⚠ ${r.avisos.length} linha(s) com problema:\n` + r.avisos.map(a => `linha ${a.linha}: ${a.motivo}`).join('\n');
-      }
-      fb.className = r.avisos.length > 0 ? 'erro' : 'ok';
-      fb.textContent = msg;
-      if (r.adicionados.length > 0) document.getElementById('lote-texto').value = '';
-    } catch (e) { erroConexao(fb, e); }
-  });
+  if (adicionados.length > 0) { persistir(); document.getElementById('lote-texto').value = ''; }
+  let msg = `✔ ${adicionados.length} cadastrado(s).`;
+  if (ignorados.length > 0) msg += `\n⚠ ${ignorados.length} ignorado(s).`;
+  fb.className = ignorados.length > 0 ? 'erro' : 'ok';
+  fb.textContent = msg;
 });
 
-// ---------- Início ----------
-if (location.protocol === 'file:') {
-  document.getElementById('carregando').innerHTML =
-    '❌ Esta página precisa ser aberta pelo servidor. Execute <b>iniciar_showroom.bat</b> e acesse o endereço <b>http://localhost:3000</b> no navegador.';
-  document.getElementById('status').style.display = 'none';
-} else {
-  sincronizar();
-  setInterval(sincronizar, 2000);
-}
+iniciar().catch(err => {
+  document.getElementById('carregando').textContent = '❌ Erro de conexão com servidor: ' + err.message;
+});
 </script>
 </body>
 </html>
