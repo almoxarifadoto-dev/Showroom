@@ -1,8 +1,16 @@
-FROM node:20-alpine
+FROM python:3.9-slim
+
 WORKDIR /app
-# O usuário "node" tem UID 1000, que é o que o Hugging Face Spaces usa
-COPY --chown=node:node server.js showroom.html catalogo.js ./
-USER node
-ENV PORT=7860
-EXPOSE 7860
-CMD ["node", "server.js"]
+
+# Copia e instala as dependências
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copia o restante do código
+COPY . .
+
+# A porta que a maioria dos serviços em nuvem usa
+EXPOSE 8000
+
+# Comando para iniciar a aplicação
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
