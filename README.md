@@ -1,10 +1,11 @@
----
-title: Showroom
-emoji: 📦
-colorFrom: green
-colorTo: blue
-sdk: docker
-app_port: 7860
----
+# Sistema de Showroom com SQLite Persistente
 
-Controle de itens do showroom (leitura de EAN / código de integração), compartilhado entre vários PCs.
+Aplicativo web para controle de itens via leitura de código de barras, usando SQLite no backend com FastAPI para garantir a persistência dos dados.
+
+## Como rodar localmente
+
+1. Tenha o Python instalado na sua máquina (versão 3.9+).
+2. Clone este repositório.
+3. Instale as dependências executando:
+   ```bash
+   pip install -r requirements.txt
