@@ -6,11 +6,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copia o restante do código
+# Copia o restante do código para a raiz do container
 COPY . .
 
-# A porta que a maioria dos serviços em nuvem usa
-EXPOSE 8000
+# Porta padrão utilizada pelo Render
+EXPOSE 7860
 
-# Comando para iniciar a aplicação
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Comando de execução explícito
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
