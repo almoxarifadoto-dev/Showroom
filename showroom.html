@@ -2,105 +2,146 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Showroom - Controle de Itens (SQLite no Servidor)</title>
+<!-- -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Showroom - Horus Distribuidora</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
   * { box-sizing: border-box; }
   body {
-    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
-    background: #0f1115;
-    color: #e6e6e6;
+    font-family: 'Poppins', -apple-system, sans-serif;
+    background: #ffffff;
+    color: #333333;
     margin: 0;
     padding: 24px;
     max-width: 900px;
     margin: 0 auto;
   }
-  h1 { font-size: 1.4rem; margin-bottom: 4px; }
-  .sub { color: #888; margin-bottom: 24px; font-size: 0.9rem; }
+  
+  .header-logo { text-align: center; margin-bottom: 24px; }
+  .header-logo img { max-width: 100%; height: auto; width: 300px; }
 
-  .backup-container { display: flex; gap: 10px; margin-bottom: 24px; }
+  h1 { font-size: 1.6rem; margin-bottom: 4px; color: #1a1a1a; text-align: center; }
+  h2 { font-size: 1.2rem; color: #1a1a1a; border-bottom: 2px solid #f87e08; padding-bottom: 8px; display: inline-block; margin-top: 32px; }
+  .sub { color: #666; margin-bottom: 24px; font-size: 0.9rem; }
+
+  .backup-container { display: flex; gap: 10px; margin-bottom: 24px; justify-content: center; }
   button.btn-backup {
-    background: #2a2d35; border: 1px solid #444; color: #ccc;
-    padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;
-    display: flex; align-items: center; gap: 6px;
+    background: #f87e08; border: none; color: #fff;
+    padding: 10px 18px; border-radius: 6px; font-size: 0.9rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500;
+    transition: background 0.3s;
   }
-  button.btn-backup:hover { background: #3a3d45; border-color: #7ab8e0; color: #fff; }
+  button.btn-backup:hover { background: #e06c00; }
 
   #carregando {
-    padding: 14px; border-radius: 8px; background: #1a1d24; color: #7ab8e0;
-    margin-bottom: 20px; font-size: 0.9rem;
+    padding: 14px; border-radius: 8px; background: #fff3e0; color: #d84315;
+    margin-bottom: 20px; font-size: 0.9rem; border: 1px solid #ffb74d; text-align: center; font-weight: 500;
   }
 
-  input[disabled], textarea[disabled], button[disabled] { opacity: 0.4; cursor: not-allowed; }
+  input[disabled], textarea[disabled], button[disabled] { opacity: 0.5; cursor: not-allowed; }
 
   #scan-box, #busca-box {
-    width: 100%; font-size: 1.2rem; padding: 14px; border-radius: 8px;
-    border: 2px solid #333; background: #1a1d24; color: #fff; margin-bottom: 8px;
+    width: 100%; font-size: 1.1rem; padding: 14px; border-radius: 8px;
+    border: 2px solid #ddd; background: #fafafa; color: #333; margin-bottom: 8px;
+    transition: border-color 0.3s;
   }
-  #scan-box:focus, #busca-box:focus { border-color: #4caf50; outline: none; }
-  #busca-box:focus { border-color: #7ab8e0; }
+  #scan-box:focus, #busca-box:focus { border-color: #f87e08; outline: none; background: #fff; }
 
   #feedback {
     min-height: 40px; padding: 12px; border-radius: 8px; margin-bottom: 24px;
-    font-weight: 600; display: none;
+    font-weight: 600; display: none; text-align: center; font-size: 0.95rem;
   }
-  #feedback.ok-add { background: #1e3a24; color: #7be08a; display: block; }
-  #feedback.erro { background: #3a2e1e; color: #e0c07a; display: block; }
+  #feedback.ok-add { background: #e8f5e9; color: #2e7d32; border: 1px solid #81c784; display: block; }
+  #feedback.erro { background: #ffebee; color: #c62828; border: 1px solid #e57373; display: block; }
 
   #resultados-busca { margin-bottom: 24px; }
   .resultado {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 8px 10px; border-bottom: 1px solid #262a33; font-size: 0.9rem;
+    padding: 12px 14px; border-bottom: 1px solid #eee; font-size: 0.95rem;
+    background: #fff; gap: 10px;
   }
-  .resultado .info { flex: 1; }
-  .resultado .info .cod { color: #888; margin-right: 8px; }
+  .resultado:hover { background: #fafafa; }
+  .resultado .info { flex: 1; word-break: break-word; }
+  .resultado .info .cod { color: #888; margin-right: 8px; font-weight: 600; }
   
   button.adicionar {
-    background: #1e3a24; border: 1px solid #2d5a35; color: #7be08a;
-    padding: 5px 14px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;
+    background: #32373c; border: none; color: #fff; white-space: nowrap;
+    padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; font-weight: 500;
+    transition: background 0.3s;
   }
-  button.adicionar:hover { background: #244a2c; }
+  button.adicionar:hover { background: #f87e08; }
 
-  table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #262a33; font-size: 0.9rem; }
-  th { color: #888; font-weight: 500; }
-  #contador { color: #4caf50; font-weight: 700; }
+  .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  table { width: 100%; border-collapse: collapse; background: #fff; min-width: 600px; }
+  th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+  th { color: #333; font-weight: 600; background: #f4f6f9; text-transform: uppercase; font-size: 0.8rem; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  .acoes-btn { display: flex; gap: 6px; }
+  
+  #contador { color: #f87e08; font-weight: 700; }
 
-  .topo { display: flex; justify-content: space-between; align-items: baseline; }
+  .topo { display: flex; justify-content: space-between; align-items: center; margin-top: 32px; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 16px; }
+  .topo h2 { border: none; padding: 0; margin: 0; }
+  
   button#limpar, button.remover, button.menos-um {
-    background: none; border-radius: 6px; font-size: 0.8rem; cursor: pointer;
+    background: none; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 500;
   }
-  button#limpar { border: 1px solid #444; color: #999; padding: 4px 10px; }
-  button#limpar:hover { border-color: #e08a8a; color: #e08a8a; }
-  button.remover { border: 1px solid #4a2020; color: #e08a8a; padding: 3px 10px; }
-  button.remover:hover { background: #3a1e1e; }
-  button.menos-um { border: 1px solid #333; color: #ccc; padding: 3px 10px; margin-right: 6px; }
-  button.menos-um:hover { border-color: #7ab8e0; color: #7ab8e0; }
+  button#limpar { border: 1px solid #ccc; color: #666; padding: 6px 12px; transition: all 0.3s; }
+  button#limpar:hover { border-color: #d32f2f; color: #d32f2f; background: #ffebee; }
+  button.remover { border: 1px solid #e57373; color: #d32f2f; padding: 6px 10px; background: #fff; transition: all 0.2s;}
+  button.remover:hover { background: #ffebee; }
+  button.menos-um { border: 1px solid #ccc; color: #555; padding: 6px 12px; background: #fff; transition: all 0.2s;}
+  button.menos-um:hover { border-color: #f87e08; color: #f87e08; }
 
   #busca-showroom, .form-cadastro input, #lote-texto, #lote-codigos-texto {
-    width: 100%; font-size: 0.95rem; padding: 10px; border-radius: 8px;
-    border: 2px solid #333; background: #1a1d24; color: #fff; margin-bottom: 8px;
+    width: 100%; font-size: 0.95rem; padding: 12px; border-radius: 8px;
+    border: 1px solid #ddd; background: #fafafa; color: #333; margin-bottom: 10px;
+    transition: border-color 0.3s;
   }
   #busca-showroom:focus, .form-cadastro input:focus, #lote-texto:focus, #lote-codigos-texto:focus {
-    border-color: #7ab8e0; outline: none;
+    border-color: #f87e08; outline: none; background: #fff;
   }
 
-  .form-cadastro { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+  .form-cadastro { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; background: #f9f9f9; padding: 16px; border-radius: 8px; border: 1px solid #eee; }
   #salvar-novo-item, #salvar-lote, #salvar-lote-codigos {
-    background: #1e3a24; border: 1px solid #2d5a35; color: #7be08a;
-    padding: 10px; border-radius: 8px; font-size: 0.95rem; cursor: pointer;
+    background: #32373c; border: none; color: #fff;
+    padding: 12px; border-radius: 8px; font-size: 0.95rem; cursor: pointer; font-weight: 600;
+    transition: background 0.3s; width: 100%;
   }
-  #salvar-novo-item:hover, #salvar-lote:hover, #salvar-lote-codigos:hover { background: #244a2c; }
+  #salvar-novo-item:hover, #salvar-lote:hover, #salvar-lote-codigos:hover { background: #f87e08; }
   
-  #feedback-cadastro, #feedback-lote, #feedback-lote-codigos { margin-bottom: 24px; font-size: 0.9rem; min-height: 20px; white-space: pre-wrap; }
-  .ok { color: #7be08a; }
-  .erro { color: #e0c07a; }
+  #feedback-cadastro, #feedback-lote, #feedback-lote-codigos { margin-bottom: 24px; font-size: 0.9rem; min-height: 20px; white-space: pre-wrap; font-weight: 500; }
+  .ok { color: #2e7d32; }
+  .erro { color: #c62828; }
   #lote-texto, #lote-codigos-texto { font-family: monospace; font-size: 0.85rem; resize: vertical; }
+
+  /* Ajustes Mobile (Telas menores que 600px) */
+  @media (max-width: 600px) {
+    body { padding: 16px; }
+    h1 { font-size: 1.4rem; }
+    .backup-container { flex-direction: column; }
+    .btn-backup { width: 100%; justify-content: center; }
+    
+    .topo { flex-direction: column; align-items: flex-start; gap: 12px; }
+    button#limpar { width: 100%; }
+    
+    .resultado { flex-direction: column; align-items: flex-start; }
+    button.adicionar { width: 100%; padding: 12px; margin-top: 8px; }
+    
+    #scan-box, #busca-box { font-size: 1rem; padding: 12px; }
+  }
 </style>
 </head>
 <body>
 
-  <h1>Showroom</h1>
-  <div class="sub">Banco de dados: SQLite rodando no servidor.</div>
+  <div class="header-logo">
+    <img src="https://horus.com.br/wp-content/uploads/2025/05/Logo-Horus-horizontal-sem-fundo.png" alt="Horus Distribuidora">
+  </div>
+
+  <h1>Controle de Showroom</h1>
+  <div class="sub" style="text-align: center;">Sistema de gerenciamento de itens (SQLite)</div>
 
   <div class="backup-container">
     <button id="btn-exportar" class="btn-backup">📥 Exportar Banco (.db)</button>
@@ -108,23 +149,23 @@
     <input type="file" id="input-importar" accept=".db,.sqlite" style="display:none;">
   </div>
 
-  <div id="carregando">⏳ Conectando ao servidor backend (se estiver hibernando, pode levar alguns segundos)...</div>
+  <div id="carregando">⏳ Conectando ao servidor backend...</div>
 
-  <input id="scan-box" type="text" placeholder="Aguardando leitura (EAN ou código de integração)..." autofocus disabled>
+  <input id="scan-box" type="text" placeholder="Aguardando leitura (EAN ou código)..." autofocus disabled>
   <div id="feedback"></div>
 
-  <h2 style="margin-top:32px;">Adicionar vários códigos de uma vez</h2>
-  <div class="sub">Cole ou digite vários códigos (EAN ou código de integração), um por linha. Cada um soma 1 na quantidade.</div>
-  <textarea id="lote-codigos-texto" rows="6" placeholder="7898214962183&#10;30000&#10;1019&#10;7899298710417" disabled></textarea>
+  <h2>Adicionar vários códigos de uma vez</h2>
+  <div class="sub">Cole ou digite vários códigos (EAN ou código de integração), um por linha.</div>
+  <textarea id="lote-codigos-texto" rows="5" placeholder="7898214962183&#10;30000&#10;1019" disabled></textarea>
   <button id="salvar-lote-codigos" disabled>Adicionar lote</button>
   <div id="feedback-lote-codigos"></div>
 
-  <h2 style="margin-top:32px;">Busca manual por código</h2>
+  <h2>Busca manual por código</h2>
   <div class="sub">Sem pistola: digite o código do produto (ou parte dele).</div>
   <input id="busca-box" type="text" placeholder="Ex: 30000..." disabled>
   <div id="resultados-busca"></div>
 
-  <h2 style="margin-top:32px;">Cadastrar item novo no banco</h2>
+  <h2>Cadastrar item novo no banco</h2>
   <div class="sub">Pra produtos que ainda não estão na base importada.</div>
   <div class="form-cadastro">
     <input id="novo-produto" type="text" placeholder="Código do produto (obrigatório)" disabled>
@@ -135,31 +176,32 @@
   </div>
   <div id="feedback-cadastro"></div>
 
-  <h2 style="margin-top:32px;">Cadastrar vários de uma vez</h2>
-  <div class="sub">Uma linha por item, campos separados por ponto e vírgula:<br>
-  <code>código;nome;marca;código de barras</code></div>
-  <textarea id="lote-texto" rows="6" placeholder="99999;ITEM EXEMPLO UM;MARCA X;7891234567890" disabled></textarea>
+  <h2>Cadastrar vários de uma vez</h2>
+  <div class="sub">código;nome;marca;código de barras</div>
+  <textarea id="lote-texto" rows="5" placeholder="99999;ITEM EXEMPLO;MARCA X;7891234567890" disabled></textarea>
   <button id="salvar-lote" disabled>Cadastrar lote</button>
   <div id="feedback-lote"></div>
 
   <div class="topo">
-    <h2>Itens no showroom (<span id="contador">0</span>)</h2>
-    <button id="limpar" title="Zera a quantidade de todos os itens do showroom">Zerar showroom</button>
+    <h2 style="margin-top:0;">Itens no showroom (<span id="contador">0</span>)</h2>
+    <button id="limpar">Zerar showroom</button>
   </div>
   <input id="busca-showroom" type="text" placeholder="Filtrar itens do showroom por código ou nome..." style="margin-bottom:12px;">
-  <table>
-    <thead>
-      <tr><th>Código</th><th>Nome</th><th>Marca</th><th>Qtd.</th><th>Cód. barras</th><th>Última leitura</th><th></th></tr>
-    </thead>
-    <tbody id="lista"></tbody>
-  </table>
+  
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr><th>Código</th><th>Nome</th><th>Marca</th><th>Qtd.</th><th>Cód. barras</th><th>Última leitura</th><th>Ações</th></tr>
+      </thead>
+      <tbody id="lista"></tbody>
+    </table>
+  </div>
 
 <script src="catalogo.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
 <script>
 let db = null;
 
-// ---------- Servidor: guardar/carregar o binário do SQLite ----------
 async function carregarBinario() {
   try {
     const res = await fetch('/load_db');
@@ -167,7 +209,7 @@ async function carregarBinario() {
     const buffer = await res.arrayBuffer();
     return new Uint8Array(buffer);
   } catch (err) {
-    console.error('Erro ao carregar banco do servidor:', err);
+    console.error('Erro ao carregar banco:', err);
     return null;
   }
 }
@@ -179,53 +221,32 @@ async function salvarBinario(uint8arr) {
       headers: { 'Content-Type': 'application/octet-stream' },
       body: uint8arr
     });
-    if (!res.ok) console.error('Falha ao salvar no servidor.');
   } catch (err) {
-    console.error('Erro de rede ao tentar salvar:', err);
+    console.error('Erro de rede:', err);
   }
 }
 
 function persistir() {
   const dados = db.export();
-  salvarBinario(dados).catch(err => console.error('Erro na persistência:', err));
+  salvarBinario(dados).catch(err => console.error('Erro persistência:', err));
 }
 
-// ---------- Exportação / Importação ----------
-document.getElementById('btn-exportar').addEventListener('click', () => {
-  window.location.href = '/download_db';
-});
-
+document.getElementById('btn-exportar').addEventListener('click', () => { window.location.href = '/download_db'; });
 const inputImportar = document.getElementById('input-importar');
-document.getElementById('btn-importar').addEventListener('click', () => {
-  inputImportar.click();
-});
+document.getElementById('btn-importar').addEventListener('click', () => inputImportar.click());
 
 inputImportar.addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  
-  if (!confirm('ATENÇÃO: Isso vai apagar o banco atual e substituir pelo que você está enviando. Confirma?')) {
-    inputImportar.value = '';
-    return;
-  }
-
+  if (!confirm('Isso vai substituir o banco atual. Confirma?')) { inputImportar.value = ''; return; }
   const buffer = await file.arrayBuffer();
-  const uint8arr = new Uint8Array(buffer);
-  
-  document.getElementById('carregando').textContent = '⏳ Importando banco e salvando no servidor...';
   document.getElementById('carregando').style.display = 'block';
-
-  await salvarBinario(uint8arr);
-  alert('Banco importado com sucesso! A página será atualizada.');
-  window.location.reload();
+  await salvarBinario(new Uint8Array(buffer));
+  alert('Importado com sucesso!'); window.location.reload();
 });
 
-// ---------- Inicialização ----------
 async function iniciar() {
-  const SQL = await initSqlJs({
-    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
-  });
-
+  const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}` });
   const binarioExistente = await carregarBinario();
 
   if (binarioExistente) {
@@ -233,286 +254,143 @@ async function iniciar() {
   } else {
     db = new SQL.Database();
     db.run(`
-      CREATE TABLE catalogo (
-        produto TEXT PRIMARY KEY,
-        nome TEXT,
-        marca TEXT,
-        codigo_original TEXT,
-        codigo_barras TEXT
-      );
-      CREATE TABLE showroom (
-        produto TEXT PRIMARY KEY,
-        quantidade INTEGER NOT NULL DEFAULT 0,
-        ultimo_scan TEXT
-      );
+      CREATE TABLE catalogo (produto TEXT PRIMARY KEY, nome TEXT, marca TEXT, codigo_original TEXT, codigo_barras TEXT);
+      CREATE TABLE showroom (produto TEXT PRIMARY KEY, quantidade INTEGER NOT NULL DEFAULT 0, ultimo_scan TEXT);
       CREATE INDEX idx_codigo_barras ON catalogo(codigo_barras);
     `);
-    
     if (typeof CATALOGO !== 'undefined') {
       db.run('BEGIN TRANSACTION');
       const stmt = db.prepare('INSERT INTO catalogo (produto, nome, marca, codigo_original, codigo_barras) VALUES (?, ?, ?, ?, ?)');
-      for (const item of CATALOGO) {
-        stmt.run([item.produto, item.nome, item.marca, item.codigo_original, item.codigo_barras]);
-      }
-      stmt.free();
-      db.run('COMMIT');
+      for (const item of CATALOGO) stmt.run([item.produto, item.nome, item.marca, item.codigo_original, item.codigo_barras]);
+      stmt.free(); db.run('COMMIT');
     }
     persistir();
   }
 
   document.getElementById('carregando').style.display = 'none';
   document.querySelectorAll('input, button, textarea').forEach(el => el.disabled = false);
-  
-  const scanBox = document.getElementById('scan-box');
-  scanBox.focus();
+  document.getElementById('scan-box').focus();
   renderizarLista();
 }
 
 function consultar(sql, params = []) {
-  const stmt = db.prepare(sql);
-  stmt.bind(params);
-  const linhas = [];
-  while (stmt.step()) linhas.push(stmt.getAsObject());
-  stmt.free();
-  return linhas;
+  const stmt = db.prepare(sql); stmt.bind(params);
+  const linhas = []; while (stmt.step()) linhas.push(stmt.getAsObject()); stmt.free(); return linhas;
 }
+function executar(sql, params = []) { db.run(sql, params); }
 
-function executar(sql, params = []) {
-  db.run(sql, params);
-}
-
-const scanBox = document.getElementById('scan-box');
-const feedback = document.getElementById('feedback');
-const lista = document.getElementById('lista');
-const contador = document.getElementById('contador');
-const buscaBox = document.getElementById('busca-box');
-const resultadosBusca = document.getElementById('resultados-busca');
-const buscaShowroom = document.getElementById('busca-showroom');
+const scanBox = document.getElementById('scan-box'), feedback = document.getElementById('feedback'), lista = document.getElementById('lista'), contador = document.getElementById('contador'), buscaBox = document.getElementById('busca-box'), resultadosBusca = document.getElementById('resultados-busca'), buscaShowroom = document.getElementById('busca-showroom');
 
 document.addEventListener('click', (e) => {
-  const tagsIgnoradas = ['BUTTON', 'INPUT', 'TEXTAREA'];
-  if (tagsIgnoradas.includes(e.target.tagName)) return;
-  if (!scanBox.disabled) scanBox.focus();
+  if (['BUTTON', 'INPUT', 'TEXTAREA'].includes(e.target.tagName) || e.target.closest('.resultado') || e.target.closest('.table-responsive')) return;
+  if (!scanBox.disabled && window.innerWidth > 600) scanBox.focus(); // Evita focar automaticamente em telas pequenas e subir o teclado
 });
 
 scanBox.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter') return;
-  const codigo = scanBox.value.trim();
-  scanBox.value = '';
-  if (!codigo) return;
-  processarLeitura(codigo);
+  const codigo = scanBox.value.trim(); scanBox.value = '';
+  if (codigo) processarLeitura(codigo);
 });
 
 function resolverCodigo(codigoLido) {
   const porBarras = consultar('SELECT produto, nome, marca FROM catalogo WHERE codigo_barras = ?', [codigoLido]);
-  if (porBarras.length > 1) return { status: 'ambiguo', codigoLido, candidatos: porBarras, origem: 'código de barras' };
-  if (porBarras.length === 1) return { status: 'ok', produto: porBarras[0].produto, origem: 'código de barras' };
+  if (porBarras.length > 1) return { status: 'ambiguo', codigoLido, candidatos: porBarras };
+  if (porBarras.length === 1) return { status: 'ok', produto: porBarras[0].produto };
   const porProduto = consultar('SELECT produto FROM catalogo WHERE produto = ?', [codigoLido]);
-  if (porProduto.length === 1) return { status: 'ok', produto: porProduto[0].produto, origem: 'código de integração (Produto)' };
+  if (porProduto.length === 1) return { status: 'ok', produto: porProduto[0].produto };
   return { status: 'nao_encontrado', codigoLido };
 }
 
 function aplicarAdicao(codigo, agora) {
-  const itemRows = consultar('SELECT * FROM catalogo WHERE produto = ?', [codigo]);
-  if (itemRows.length === 0) return null;
-  const item = itemRows[0];
-  const existente = consultar('SELECT quantidade FROM showroom WHERE produto = ?', [codigo]);
-  let novaQuantidade;
-  if (existente.length > 0) {
-    novaQuantidade = existente[0].quantidade + 1;
-    executar('UPDATE showroom SET quantidade = ?, ultimo_scan = ? WHERE produto = ?', [novaQuantidade, agora, codigo]);
-  } else {
-    novaQuantidade = 1;
-    executar('INSERT INTO showroom (produto, quantidade, ultimo_scan) VALUES (?, 1, ?)', [codigo, agora]);
-  }
+  const item = consultar('SELECT * FROM catalogo WHERE produto = ?', [codigo])[0];
+  if (!item) return null;
+  const ex = consultar('SELECT quantidade FROM showroom WHERE produto = ?', [codigo]);
+  let novaQuantidade = ex.length > 0 ? ex[0].quantidade + 1 : 1;
+  if (ex.length > 0) executar('UPDATE showroom SET quantidade = ?, ultimo_scan = ? WHERE produto = ?', [novaQuantidade, agora, codigo]);
+  else executar('INSERT INTO showroom (produto, quantidade, ultimo_scan) VALUES (?, 1, ?)', [codigo, agora]);
   return { item, novaQuantidade };
 }
 
-function adicionarProduto(codigo, origem) {
-  const agora = new Date().toLocaleString('pt-BR');
-  const resultado = aplicarAdicao(codigo, agora);
-  if (!resultado) return;
-  persistir();
-  feedback.className = 'ok-add';
-  feedback.textContent = `✔ ${resultado.item.nome} (${resultado.item.marca}) — cód. ${codigo} [via ${origem}] — quantidade agora: ${resultado.novaQuantidade}`;
-  renderizarLista();
+function adicionarProduto(codigo) {
+  const res = aplicarAdicao(codigo, new Date().toLocaleString('pt-BR'));
+  if (!res) return;
+  persistir(); renderizarLista();
+  feedback.className = 'ok-add'; feedback.textContent = `✔ ${res.item.nome} (${res.item.marca}) — cód. ${codigo} — Qtd: ${res.novaQuantidade}`;
 }
 
-function processarLeitura(codigoLido) {
-  const r = resolverCodigo(codigoLido);
-  if (r.status === 'ambiguo') {
-    const nomes = r.candidatos.map(c => `${c.produto} - ${c.nome}`).join('  |  ');
-    feedback.className = 'erro';
-    feedback.textContent = `⚠ ${r.origem} '${r.codigoLido}' está cadastrado em mais de um produto (${nomes}). Nada adicionado.`;
-    return;
-  }
-  if (r.status === 'nao_encontrado') {
-    feedback.className = 'erro';
-    feedback.textContent = `⚠ Código '${r.codigoLido}' não encontrado.`;
-    return;
-  }
-  adicionarProduto(r.produto, r.origem);
-}
-
-function removerUma(codigo) {
-  executar('UPDATE showroom SET quantidade = quantidade - 1 WHERE produto = ? AND quantidade > 0', [codigo]);
-  persistir();
-  renderizarLista();
-  scanBox.focus();
-}
-
-function removerDoShowroom(codigo) {
-  executar('UPDATE showroom SET quantidade = 0 WHERE produto = ?', [codigo]);
-  persistir();
-  renderizarLista();
-  scanBox.focus();
+function processarLeitura(codigo) {
+  const r = resolverCodigo(codigo);
+  if (r.status === 'ambiguo') { feedback.className = 'erro'; feedback.textContent = `⚠ Código '${codigo}' é ambíguo.`; }
+  else if (r.status === 'nao_encontrado') { feedback.className = 'erro'; feedback.textContent = `⚠ Código '${codigo}' não encontrado.`; }
+  else adicionarProduto(r.produto);
 }
 
 buscaShowroom.addEventListener('input', renderizarLista);
 
 function renderizarLista() {
   const termo = buscaShowroom.value.trim();
-  let sqlBase = `
-    SELECT s.produto, c.nome, c.marca, c.codigo_barras, s.quantidade, s.ultimo_scan
-    FROM showroom s JOIN catalogo c ON c.produto = s.produto
-    WHERE s.quantidade > 0
-  `;
+  let sql = `SELECT s.produto, c.nome, c.marca, c.codigo_barras, s.quantidade, s.ultimo_scan FROM showroom s JOIN catalogo c ON c.produto = s.produto WHERE s.quantidade > 0`;
   let params = [];
-  if (termo) {
-    sqlBase += ` AND (s.produto LIKE ? OR c.nome LIKE ?)`;
-    params.push(`%${termo}%`, `%${termo}%`);
-  }
-  sqlBase += ` ORDER BY s.ultimo_scan DESC`;
-  const linhas = consultar(sqlBase, params);
+  if (termo) { sql += ` AND (s.produto LIKE ? OR c.nome LIKE ?)`; params.push(`%${termo}%`, `%${termo}%`); }
+  sql += ` ORDER BY s.ultimo_scan DESC`;
+  const linhas = consultar(sql, params);
   
-  const totalGeral = consultar('SELECT COUNT(*) as n FROM showroom WHERE quantidade > 0')[0].n;
-  contador.textContent = totalGeral;
-  
+  contador.textContent = consultar('SELECT COUNT(*) as n FROM showroom WHERE quantidade > 0')[0].n;
   lista.innerHTML = linhas.map(row => `
     <tr>
-      <td>${row.produto}</td>
-      <td>${row.nome}</td>
-      <td>${row.marca}</td>
-      <td>${row.quantidade}</td>
-      <td>${row.codigo_barras || '—'}</td>
-      <td>${row.ultimo_scan}</td>
-      <td>
+      <td>${row.produto}</td><td>${row.nome}</td><td>${row.marca}</td><td>${row.quantidade}</td>
+      <td>${row.codigo_barras || '—'}</td><td>${row.ultimo_scan}</td>
+      <td class="acoes-btn">
         <button class="menos-um" data-codigo="${row.produto}">-1</button>
         <button class="remover" data-codigo="${row.produto}">Remover</button>
       </td>
     </tr>
   `).join('');
 
-  lista.querySelectorAll('button.menos-um').forEach(btn => btn.addEventListener('click', () => removerUma(btn.dataset.codigo)));
-  lista.querySelectorAll('button.remover').forEach(btn => btn.addEventListener('click', () => removerDoShowroom(btn.dataset.codigo)));
+  lista.querySelectorAll('.menos-um').forEach(btn => btn.addEventListener('click', () => { executar('UPDATE showroom SET quantidade = quantidade - 1 WHERE produto = ? AND quantidade > 0', [btn.dataset.codigo]); persistir(); renderizarLista(); }));
+  lista.querySelectorAll('.remover').forEach(btn => btn.addEventListener('click', () => { executar('UPDATE showroom SET quantidade = 0 WHERE produto = ?', [btn.dataset.codigo]); persistir(); renderizarLista(); }));
 }
 
 document.getElementById('limpar').addEventListener('click', () => {
-  if (confirm('Isso zera a quantidade de TODOS os itens do showroom. Confirma?')) {
-    executar('UPDATE showroom SET quantidade = 0');
-    persistir();
-    renderizarLista();
-    scanBox.focus();
-  }
+  if (confirm('Zerar TODOS os itens do showroom?')) { executar('UPDATE showroom SET quantidade = 0'); persistir(); renderizarLista(); }
 });
 
 buscaBox.addEventListener('input', () => {
   const termo = buscaBox.value.trim();
   if (termo.length < 2) { resultadosBusca.innerHTML = ''; return; }
-  const encontrados = consultar('SELECT produto, nome, marca FROM catalogo WHERE produto LIKE ? LIMIT 25', [`%${termo}%`]);
-  if (encontrados.length === 0) { resultadosBusca.innerHTML = '<div class="sub">Nada encontrado.</div>'; return; }
+  const encontrados = consultar('SELECT produto, nome, marca FROM catalogo WHERE produto LIKE ? OR nome LIKE ? LIMIT 25', [`%${termo}%`, `%${termo}%`]);
   resultadosBusca.innerHTML = encontrados.map(item => `
     <div class="resultado">
       <div class="info"><span class="cod">${item.produto}</span>${item.nome} — ${item.marca}</div>
       <button class="adicionar" data-codigo="${item.produto}">+ Adicionar</button>
     </div>
   `).join('');
-  resultadosBusca.querySelectorAll('button.adicionar').forEach(btn => {
-    btn.addEventListener('click', () => {
-      adicionarProduto(btn.dataset.codigo, 'busca manual');
-      buscaBox.value = ''; resultadosBusca.innerHTML = ''; buscaBox.focus();
-    });
-  });
+  resultadosBusca.querySelectorAll('.adicionar').forEach(btn => btn.addEventListener('click', () => { adicionarProduto(btn.dataset.codigo); buscaBox.value = ''; resultadosBusca.innerHTML = ''; }));
 });
 
 document.getElementById('salvar-novo-item').addEventListener('click', () => {
-  const fb = document.getElementById('feedback-cadastro');
-  const produto = document.getElementById('novo-produto').value.trim();
-  const nome = document.getElementById('novo-nome').value.trim();
-  const marca = document.getElementById('novo-marca').value.trim();
-  const barras = document.getElementById('novo-barras').value.trim();
-
-  if (!produto || !nome) return (fb.className = 'erro', fb.textContent = '⚠ Código e nome são obrigatórios.');
-  if (consultar('SELECT produto FROM catalogo WHERE produto = ?', [produto]).length > 0) 
-    return (fb.className = 'erro', fb.textContent = '⚠ Já existe um item com esse código no banco.');
-
-  let barrasParaSalvar = barras;
-  if (barras && consultar('SELECT produto FROM catalogo WHERE codigo_barras = ?', [barras]).length > 0) {
-    fb.className = 'erro';
-    fb.textContent = '⚠ Código de barras já em uso. Item cadastrado SEM código de barras.';
-    barrasParaSalvar = '';
-  }
-
-  executar('INSERT INTO catalogo (produto, nome, marca, codigo_original, codigo_barras) VALUES (?, ?, ?, ?, ?)', [produto, nome, marca, produto, barrasParaSalvar]);
-  persistir();
-  if (fb.className !== 'erro') { fb.className = 'ok'; fb.textContent = `✔ Item '${produto} - ${nome}' cadastrado.`; }
-  
+  const fb = document.getElementById('feedback-cadastro'), prod = document.getElementById('novo-produto').value.trim(), nome = document.getElementById('novo-nome').value.trim(), marca = document.getElementById('novo-marca').value.trim(), barras = document.getElementById('novo-barras').value.trim();
+  if (!prod || !nome) return (fb.className = 'erro', fb.textContent = '⚠ Código e nome são obrigatórios.');
+  if (consultar('SELECT produto FROM catalogo WHERE produto = ?', [prod]).length > 0) return (fb.className = 'erro', fb.textContent = '⚠ Já existe item com esse código.');
+  let bs = barras; if (barras && consultar('SELECT produto FROM catalogo WHERE codigo_barras = ?', [barras]).length > 0) bs = '';
+  executar('INSERT INTO catalogo (produto, nome, marca, codigo_original, codigo_barras) VALUES (?, ?, ?, ?, ?)', [prod, nome, marca, prod, bs]);
+  persistir(); fb.className = 'ok'; fb.textContent = `✔ Cadastrado com sucesso.`;
   ['novo-produto', 'novo-nome', 'novo-marca', 'novo-barras'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('novo-produto').focus();
 });
 
 document.getElementById('salvar-lote-codigos').addEventListener('click', () => {
-  const fb = document.getElementById('feedback-lote-codigos');
   const codigos = document.getElementById('lote-codigos-texto').value.split(/[\n,;]+/).map(c => c.trim()).filter(c => c.length > 0);
-  if (codigos.length === 0) return (fb.className = 'erro', fb.textContent = '⚠ Cole ao menos um código.');
-
-  const agora = new Date().toLocaleString('pt-BR');
-  const adicionados = [], problemas = [];
-  let houveAdicao = false;
-
-  codigos.forEach(cod => {
-    const r = resolverCodigo(cod);
-    if (r.status === 'ambiguo' || r.status === 'nao_encontrado') return problemas.push(`'${cod}': ${r.status}`);
-    const res = aplicarAdicao(r.produto, agora);
-    if (res) { houveAdicao = true; adicionados.push(`${r.produto} - ${res.item.nome}`); }
-  });
-
-  if (houveAdicao) { persistir(); renderizarLista(); document.getElementById('lote-codigos-texto').value = ''; }
-  let msg = `✔ ${adicionados.length} processado(s).`;
-  if (problemas.length > 0) msg += `\n⚠ ${problemas.length} com problema.`;
-  fb.className = problemas.length > 0 ? 'erro' : 'ok';
-  fb.textContent = msg;
+  if (codigos.length > 0) { codigos.forEach(cod => { const r = resolverCodigo(cod); if (r.status === 'ok') aplicarAdicao(r.produto, new Date().toLocaleString('pt-BR')); }); persistir(); renderizarLista(); document.getElementById('lote-codigos-texto').value = ''; }
 });
 
 document.getElementById('salvar-lote').addEventListener('click', () => {
-  const fb = document.getElementById('feedback-lote');
-  const linhas = document.getElementById('lote-texto').value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  if (linhas.length === 0) return (fb.className = 'erro', fb.textContent = '⚠ Cole ao menos uma linha.');
-
-  const adicionados = [], ignorados = [], usados = new Set();
-  
-  linhas.forEach(linha => {
+  document.getElementById('lote-texto').value.split('\n').map(l => l.trim()).filter(l => l.length > 0).forEach(linha => {
     const [prod, nome, marca = '', barras = ''] = linha.split(';').map(c => c.trim());
-    if (!prod || !nome) return ignorados.push(`Erro na linha: ${linha}`);
-    if (usados.has(prod) || consultar('SELECT produto FROM catalogo WHERE produto = ?', [prod]).length > 0) return ignorados.push(`Cód já existe: ${prod}`);
-    
-    let bFinal = barras;
-    if (barras && consultar('SELECT produto FROM catalogo WHERE codigo_barras = ?', [barras]).length > 0) bFinal = '';
-    
-    executar('INSERT INTO catalogo (produto, nome, marca, codigo_original, codigo_barras) VALUES (?, ?, ?, ?, ?)', [prod, nome, marca, prod, bFinal]);
-    usados.add(prod); adicionados.push(prod);
-  });
-
-  if (adicionados.length > 0) { persistir(); document.getElementById('lote-texto').value = ''; }
-  let msg = `✔ ${adicionados.length} cadastrado(s).`;
-  if (ignorados.length > 0) msg += `\n⚠ ${ignorados.length} ignorado(s).`;
-  fb.className = ignorados.length > 0 ? 'erro' : 'ok';
-  fb.textContent = msg;
+    if (prod && nome && consultar('SELECT produto FROM catalogo WHERE produto = ?', [prod]).length === 0) executar('INSERT INTO catalogo (produto, nome, marca, codigo_original, codigo_barras) VALUES (?, ?, ?, ?, ?)', [prod, nome, marca, prod, barras]);
+  }); persistir(); document.getElementById('lote-texto').value = '';
 });
 
-iniciar().catch(err => {
-  document.getElementById('carregando').textContent = '❌ Erro de conexão com servidor: ' + err.message;
-});
+iniciar().catch(err => document.getElementById('carregando').textContent = '❌ Erro: ' + err.message);
 </script>
 </body>
 </html>
